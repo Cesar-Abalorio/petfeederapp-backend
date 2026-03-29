@@ -11,5 +11,8 @@ router.register(r'logs', views.FeedingLogViewSet, basename='log')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('auth/', views.CustomAuthToken.as_view()),
+    path('auth/', views.CustomAuthToken.as_view(), name='login'),  # Frontend calls /api/auth/
+    path('auth/logout/', views.logout, name='logout'),
+    path('register/', views.register, name='register'),  # Frontend calls /api/register/
+    path('profile/', views.user_profile, name='profile'),
 ]
