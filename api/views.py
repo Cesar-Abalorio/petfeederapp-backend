@@ -72,5 +72,55 @@ def user_profile(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+
+from .models import Device
+from .serializers import DeviceSerializer
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def devices(request):
+    if request.method == 'GET':
+        user_devices = Device.objects.filter(user=request.user)
+        serializer = DeviceSerializer(user_devices, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        data = request.data.copy()
+        data['user'] = request.user.id
+
+        serializer = DeviceSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def pets(request):
+    from .models import Pet
+    from rest_framework import serializers
+
+    class PetSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Pet
+            fields = "__all__"
+
+    if request.method == 'GET':
+        user_pets = Pet.objects.filter(owner=request.user)
+        serializer = PetSerializer(user_pets, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        data = request.data.copy()
+        data['owner'] = request.user.id
+
+        serializer = PetSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
   
