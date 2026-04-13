@@ -15,6 +15,8 @@ class Device(models.Model):
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('inactive', 'Inactive')], default='active')
+    ip_address = models.CharField(max_length=15, blank=True, null=True)
+    mac_address = models.CharField(max_length=17, blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -31,10 +33,11 @@ class FeedingSchedule(models.Model):
         return f"{self.pet.name} at {self.time}"
 
 class FeedingLog(models.Model):
-    schedule = models.ForeignKey(FeedingSchedule, on_delete=models.CASCADE)
+    schedule = models.ForeignKey(FeedingSchedule, on_delete=models.CASCADE, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=[('success', 'Success'), ('failed', 'Failed')], default='success')
     amount_dispensed = models.FloatField()
 
     def __str__(self):
-        return f"{self.schedule} - {self.timestamp}"
+        schedule_label = self.schedule if self.schedule else 'Manual feed'
+        return f"{schedule_label} - {self.timestamp}"
