@@ -12,7 +12,14 @@ from .models import Device, Pet, FeedingSchedule, FeedingLog
 class CustomAuthToken(ObtainAuthToken):
     """Authentication endpoint for frontend"""
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+        data = request.data.copy()
+        username = data.get('username')
+        if username and not User.objects.filter(username=username).exists():
+            user_by_email = User.objects.filter(email=username).first()
+            if user_by_email:
+                data['username'] = user_by_email.username
+
+        serializer = self.serializer_class(data=data, context={'request': request})
         if not serializer.is_valid():
             return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
