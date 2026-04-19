@@ -41,7 +41,7 @@ def register(request):
 
     if User.objects.filter(email=email).exists():
         return Response({'error': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     try:
         user = User.objects.create_user(username=username, password=password, email=email)
         token = Token.objects.create(user=user)
@@ -61,12 +61,19 @@ def logout(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
-    """Get user profile information"""
-    serializer = UserSerializer(request.user)
-    return Response(serializer.data)
+    """Get and update user profile information"""
+    if request.method == 'GET':
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -93,6 +100,52 @@ def scan_devices(request):
     return Response({'message': 'Device scanning not implemented yet'})
 
 
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def device_detail(request, device_id):
+    """Get, update, or delete a specific device"""
+    try:
+        device = Device.objects.get(id=device_id, owner=request.user)
+    except Device.DoesNotExist:
+        return Response({'error': 'Device not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = DeviceSerializer(device)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = DeviceSerializer(device, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        device.delete()
+        return Response({'message': 'Device deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def pet_detail(request, pet_id):
+    """Get, update, or delete a specific pet"""
+    try:
+        pet = Pet.objects.get(id=pet_id, owner=request.user)
+    except Pet.DoesNotExist:
+        return Response({'error': 'Pet not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = PetSerializer(pet)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = PetSerializer(pet, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        pet.delete()
+        return Response({'message': 'Pet deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def pets(request):
@@ -107,6 +160,29 @@ def pets(request):
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def schedule_detail(request, schedule_id):
+    """Get, update, or delete a specific feeding schedule"""
+    try:
+        schedule = FeedingSchedule.objects.get(id=schedule_id, device__owner=request.user)
+    except FeedingSchedule.DoesNotExist:
+        return Response({'error': 'Schedule not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = FeedingScheduleSerializer(schedule)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = FeedingScheduleSerializer(schedule, data=request.data, context={'request': request}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        schedule.delete()
+        return Response({'message': 'Schedule deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET', 'POST'])
@@ -128,10 +204,40 @@ def schedules(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def logs(request):
-    """List feeding logs"""
-    user_logs = FeedingLog.objects.filter(schedule__device__owner=request.user)
+    """List feeding logs with device information"""
+    user_logs = FeedingLog.objects.filter(schedule__device__owner=request.user).select_related('schedule__device')
     serializer = FeedingLogSerializer(user_logs, many=True)
-    return Response(serializer.data)
+    
+    # Enhance the response with device information for frontend compatibility
+    enhanced_logs = []
+    for log_data in serializer.data:
+        log_dict = dict(log_data)
+        if log_data.get('schedule'):
+            # Get schedule details
+            try:
+                schedule = FeedingSchedule.objects.select_related('device').get(id=log_data['schedule'])
+                log_dict.update({
+                    'device_id': schedule.device.id,
+                    'device_name': schedule.device.name,
+                    'feeding_type': 'Scheduled',
+                    'food_level_before': 100,  # Placeholder - would need sensor data
+                    'food_level_after': max(0, 100 - schedule.amount),  # Simple calculation
+                })
+            except FeedingSchedule.DoesNotExist:
+                pass
+        else:
+            # Manual feeding - try to get device from request or use default
+            log_dict.update({
+                'device_id': 1,  # Default device ID
+                'device_name': 'Unknown Device',
+                'feeding_type': 'Manual',
+                'food_level_before': 100,
+                'food_level_after': 50,
+            })
+        
+        enhanced_logs.append(log_dict)
+    
+    return Response(enhanced_logs)
 
 
 @api_view(['POST'])
