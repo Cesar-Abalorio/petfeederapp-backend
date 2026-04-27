@@ -1,5 +1,6 @@
 ﻿from django.urls import path
 from . import views
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
     path('auth/', views.CustomAuthToken.as_view(), name='login'),
@@ -16,4 +17,5 @@ urlpatterns = [
     path('schedules/<int:schedule_id>/', views.schedule_detail, name='schedule_detail'),
     path('logs/', views.logs, name='logs'),
     path('feeding-logs/', views.logs, name='feeding_logs'),  # Alias for frontend compatibility
+        path('api/token/', TokenObtainPairView.as_view()) #actived the api/tokenx
 ]
