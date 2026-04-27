@@ -17,5 +17,5 @@ urlpatterns = [
     path('schedules/<int:schedule_id>/', views.schedule_detail, name='schedule_detail'),
     path('logs/', views.logs, name='logs'),
     path('feeding-logs/', views.logs, name='feeding_logs'),  # Alias for frontend compatibility
-        path('api/token/', TokenObtainPairView.as_view()) #actived the api/tokenx
+    path('api/token/', TokenObtainPairView.as_view()) #actived the api/tokenx
 ]
