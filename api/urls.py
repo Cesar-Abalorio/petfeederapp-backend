@@ -7,7 +7,7 @@ urlpatterns = [
     path('auth/logout/', views.logout, name='logout'),
     path('register/', views.register, name='register'),
     path('profile/', views.user_profile, name='profile'),
-    path('devices/', views.devices, name='devices'), 
+    path('devices/', views.devices, name='devices'),
     path('devices/<int:device_id>/', views.device_detail, name='device_detail'),
     path('devices/scan/', views.scan_devices, name='scan_devices'),
     path('devices/feed/', views.feed_device, name='feed_device'),
@@ -16,6 +16,7 @@ urlpatterns = [
     path('schedules/', views.schedules, name='schedules'),
     path('schedules/<int:schedule_id>/', views.schedule_detail, name='schedule_detail'),
     path('logs/', views.logs, name='logs'),
-    path('feeding-logs/', views.logs, name='feeding_logs'),  # Alias for frontend compatibility
-path('api/token/', TokenObtainPairView.as_view()), #actived the api/tokenx    path('sensor-data/', views.sensor_data, name='sensor_data'),
+    path('feeding-logs/', views.logs, name='feeding_logs'),
+    path('api/token/', TokenObtainPairView.as_view()),
+    path('sensor-data/', views.sensor_data, name='sensor_data'),
 ]
