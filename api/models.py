@@ -41,3 +41,16 @@ class FeedingLog(models.Model):
     def __str__(self):
         schedule_label = self.schedule if self.schedule else 'Manual feed'
         return f"{schedule_label} - {self.timestamp}"
+
+class SensorData(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, null=True, blank=True)
+    temperature = models.FloatField(default=0)
+    humidity = models.FloatField(default=0)
+    food_level = models.IntegerField(default=0)
+    water_level = models.IntegerField(default=0)
+    feed_count = models.IntegerField(default=0)
+    status = models.CharField(max_length=20, default='online')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"SensorData at {self.timestamp}"
